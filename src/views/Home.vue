@@ -10,9 +10,9 @@
 </template>
 
 <script>
-import axios from "axios";
 import Loading from "@/components/Loading"
 import ProductList from "@/layout/ProductList"
+import { productRequest } from "@/services/productAPI";
 export default {
   name: 'Home',
   components: {
@@ -24,20 +24,10 @@ export default {
       isLoading: true,
     }
   },
-  created(){
-    const token = "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"
-    axios.get('https://teknasyon.netlify.app/.netlify/functions/products', {
-      headers: {
-          "X-Access-Token": `${token}`,
-        },
-    })
-    .then((res) => {
-      this.$store.commit('setProduct', res.data.products)
-      this.isLoading = false
-    })
-    .catch((error) => {
-      throw error
-    })
+  async created(){
+    const data = await productRequest();
+    this.$store.commit('setProduct', data.products)
+    this.isLoading = data?.false
   },
 }
 </script>

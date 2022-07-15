@@ -82,8 +82,8 @@
 </template>
 
 <script>
-import axios from "axios";
 import Loading from "@/components/Loading"
+import { productRequest } from "@/services/productAPI";
 import { useRoute } from 'vue-router';
 export default {
   name: 'Product',
@@ -96,22 +96,12 @@ export default {
       isLoading: true,
     }
   },
-  created(){
+  async created(){
       const route = useRoute();
       const slug = route.params.slug;
-      const token = "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"
-      axios.get(`https://teknasyon.netlify.app/.netlify/functions/products`, {
-        headers: {
-            "X-Access-Token": `${token}`,
-          },
-      })
-      .then((res) => {
-        this.product = res.data.products.filter(product => product.id == slug)
-        this.isLoading = false
-      })
-      .catch((error) => {
-        throw error
-      })
+      const data = await productRequest();
+      this.product = data.products.filter(product => product.id == slug)
+      this.isLoading = data?.false
   }
 }
 </script>
