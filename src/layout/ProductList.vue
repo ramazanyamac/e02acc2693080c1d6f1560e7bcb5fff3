@@ -6,27 +6,21 @@
 
           <div class="flex items-center justify-between">
             <p class="text-sm text-gray-500">
-              <span class="hidden sm:inline">
-                Showing
-              </span>
+              <span class="hidden sm:inline"> Showing</span>
               {{slideProduct.length}} of {{products.length}} Products
             </p>
 
             <div class="ml-4">
-              <label
-                for="SortBy"
-                class="sr-only"
-              >
-                Sort
-              </label>
+              <label class="relative" for="sort">
+                <span class="sr-only"> Sort </span>
 
-              <select @change="onFilter($event)" name="sort_by" class="text-sm border-gray-100 rounded">
-                <option readonly>Sort</option>
-                <option value="title-asc">Title, A-Z</option>
-                <option value="title-desc">Title, Z-A</option>
-                <option value="price-asc">Price, Low-High</option>
-                <option value="price-desc">Price, High-Low</option>
-              </select>
+                <select @change="onFilter" v-model="selected" class="py-3 pl-5 pr-10 text-xs font-medium border-gray-200 rounded-l-md hover:z-10 focus:outline-none focus:border-indigo-600 focus:z-10 hover:bg-gray-50 focus:ring-0">
+                  <option readonly>Sort By</option>
+                  <option v-for="(option, index) in options" :value="option.value" :key="index">
+                    {{ option.text }}
+                  </option>
+                </select>
+              </label>
             </div>
           </div>
 
@@ -42,13 +36,11 @@
           </div>
 
           <Pagination v-show="filteredProducts.length > postsPerItem" previous="Prev" next="Next" :postsPerItem=this.postsPerItem :totalItems="filteredProducts.length" :currentPage=this.currentPage @paginate-event="paginate" />
-          
-        
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import Pagination from "@/components/Pagination"
 export default {
   name: "ProductList",
@@ -62,18 +54,26 @@ export default {
       currentPage: 1,
       postsPerItem: 9,
       search: '',
+      selected: 'Sort By',
+      options: [
+          { text: 'Title, A-Z', value: 'title-asc'},
+          { text: 'Title, Z-A', value: 'title-desc'},
+          { text: 'Price, Low-High', value: 'price-asc'},
+          { text: 'Price, High-Low', value: 'price-desc'}
+        ]
     }
   },
   created(){
     this.urlIdLookup = this.$store.state.products.reduce((acc, cur, idx)=> 
           acc = {...acc, [cur.id]:cur.id }
       ,{})
+    this.selected = this.$route.query.sort ? this.$route.query.sort : this.selected
   },
   methods: {
     paginate(pageNumber){
       this.currentPage = pageNumber
     },
-    onFilter(event){
+    onFilter(){
       const availebleParams = this.$route.query;
       this.$router.replace({query: { ...availebleParams, sort: event.target.value}})
     },
@@ -83,20 +83,12 @@ export default {
   },
   computed: {
     ...mapState(['products']),
+    ...mapGetters([
+      'sortProduct'
+    ]),
     filteredProducts(){
         this.currentPage = 1;
-        let products = this.products;
-        if(this.$route.query.sort === "title-desc"){
-          products = products.sort((a, b) => a.title > b.title && -1)
-        } else if(this.$route.query.sort === "title-asc"){
-          products = products.sort((a, b) => a.title.localeCompare(b.title))
-        } else if(this.$route.query.sort === "price-asc"){
-          products = products.sort((a, b) => parseFloat(a.variants[0].price) - parseFloat(b.variants[0].price));
-        } else if(this.$route.query.sort === "price-desc"){
-          products = products.sort((a, b) => parseFloat(b.variants[0].price) - parseFloat(a.variants[0].price));
-        }
-
-        return products.filter(product => product.title.toUpperCase().indexOf(this.search.toUpperCase()) > -1)
+        return this.sortProduct(this.$route.query.sort).filter(product => product.title.toUpperCase().indexOf(this.search.toUpperCase()) > -1)
         },
         slideProduct(){
           const indexOfLastItem = this.currentPage * this.postsPerItem;
